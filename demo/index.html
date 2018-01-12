@@ -25,10 +25,17 @@
 </head>
 
 <body>
-  <soso-app-header>
-    <div style="background: red; height: 120px"></div>
+  <soso-app-header collapse-height="50">
+    <div id="bar" style="background: red; height: 200px"></div>
   </soso-app-header>
   <div class="content"></div>
+
+  <script>
+    document.addEventListener("collapse-change", (event) => {
+      let r = event.detail.ratio;
+      document.getElementById('bar').style.background = "rgb(" + Math.floor(255 * (1 - r)) + ",0," + Math.floor(255 * r) + ")";
+    });
+  </script>
 </body>
 
 </html>

@@ -35,7 +35,12 @@
             type: Number,
             observer: '_headerSet'
           },
-          collapseHeight: Number
+          collapseHeight: Number,
+          collapseRatio: {
+            type: Number,
+            value: 0,
+            observer: '_collapseRatioChange'
+          }
         };
       }
 
@@ -55,7 +60,6 @@
 
       connectedCallback() {
         super.connectedCallback();
-        this.collapseHeight = 50;
         setTimeout(() => {
           if (!this.headerHeight) {
             this.measureHeader();
@@ -73,8 +77,20 @@
       }
 
       _setOffset(value) {
-        this._barOffset = Math.max(0, Math.min(this.headerHeight || 0, value));
-        this.$.header.style.transform = "translate3d(0," + (-this._barOffset) + "px" + ",0)";
+        let y = Math.max(0, Math.min(this.headerHeight || 0, value));
+        if (this._barOffset !== y) {
+          this._barOffset = y;
+          this.$.header.style.transform = "translate3d(0," + (-this._barOffset) + "px" + ",0)";
+          if (this.collapseHeight && this.headerHeight) {
+            let max = Math.max(0, this.headerHeight - this.collapseHeight);
+            let r = Math.max(0, Math.min(1, y / max));
+            this.set("collapseRatio", r);
+          }
+        }
+      }
+
+      _collapseRatioChange() {
+        this.dispatchEvent(new CustomEvent('collapse-change', { bubbles: true, composed: true, detail: { ratio: this.collapseRatio } }));
       }
 
       _onScroll() {
@@ -89,11 +105,14 @@
           }
           let diff = st - this._prevScrollValue;
           this._prevScrollValue = st;
-          if ((diff < 0) && this.collapseHeight && (st > this.collapseHeight)) {
-            this._setOffset(Math.max(this.collapseHeight, this._barOffset + diff));
-          } else {
-            this._setOffset(this._barOffset + diff);
+          if ((diff < 0) && this.collapseHeight) {
+            let ch = Math.max(0, this.headerHeight - this.collapseHeight);
+            if (st > ch) {
+              this._setOffset(Math.max(ch, this._barOffset + diff));
+              return;
+            }
           }
+          this._setOffset(this._barOffset + diff);
         }
       }
 
