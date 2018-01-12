@@ -1,0 +1,109 @@
+<link rel="import" href="../polymer/polymer-element.html">
+
+<dom-module id="soso-app-header">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      #buffer {
+        position: relative;
+        display: block;
+        box-sizing: border-box;
+      }
+
+      #header {
+        position: fixed;
+        top: 0;
+        right: 0;
+        left: 0;
+      }
+    </style>
+    <div id="buffer"></div>
+    <div id="header">
+      <slot id="slot"></slot>
+    </div>
+  </template>
+
+  <script>
+    class SosoAppHeader extends Polymer.Element {
+      static get is() { return 'soso-app-header'; }
+      static get properties() {
+        return {
+          headerHeight: {
+            type: Number,
+            observer: '_headerSet'
+          },
+          collapseHeight: Number
+        };
+      }
+
+      constructor() {
+        super();
+        this._barOffset = 0;
+        this._scrollListener = this._onScroll.bind(this);
+      }
+
+      _headerSet() {
+        this.$.buffer.style.height = this.headerHeight + "px";
+      }
+
+      measureHeader() {
+        this.set('headerHeight', this.$.header.offsetHeight);
+      }
+
+      get thresholdHeight() {
+        if (this.collapseHeight) {
+          return this.collapseHeight();
+        }
+        return this.headerHeight;
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        setTimeout(() => {
+          if (!this.headerHeight) {
+            this.measureHeader();
+            setTimeout(() => {
+              this.measureHeader();
+            }, 50);
+          }
+        });
+        document.addEventListener("scroll", this._scrollListener);
+      }
+
+      disconnectedCallback() {
+        super.disconnectedCallback();
+        document.removeEventListener("scroll", this._scrollListener);
+      }
+
+      _setOffset(value) {
+        this._barOffset = Math.max(0, Math.min(this.headerHeight || 0, value));
+        this.$.header.style.transform = "translate3d(0," + (-this._barOffset) + "px" + ",0)";
+      }
+
+      _onScroll() {
+        let st = this.scrollValue;
+        if (!this._prevScrollValue) {
+          this._prevScrollValue = st;
+        } else {
+          if (st <= 0) {
+            this._prevScrollValue = 0;
+            this._setOffset(0);
+            return;
+          }
+          let diff = st - this._prevScrollValue;
+          this._prevScrollValue = st;
+          this._setOffset(this._barOffset + diff);
+        }
+      }
+
+      get scrollValue() {
+        return (window.pageYOffset !== undefined) ? window.pageYOffset : (document.documentElement.scrollTop || document.body.scrollTop);
+      }
+    }
+
+    window.customElements.define(SosoAppHeader.is, SosoAppHeader);
+  </script>
+</dom-module>
