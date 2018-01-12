@@ -89,14 +89,10 @@
           }
           let diff = st - this._prevScrollValue;
           this._prevScrollValue = st;
-          if (diff >= 0) {
-            this._setOffset(this._barOffset + diff);
+          if ((diff < 0) && this.collapseHeight && (st > this.collapseHeight)) {
+            this._setOffset(Math.max(this.collapseHeight, this._barOffset + diff));
           } else {
-            if (this.collapseHeight && (st > this.collapseHeight)) {
-              this._setOffset(Math.max(this.collapseHeight, this._barOffset + diff));
-            } else {
-              this._setOffset(this._barOffset + diff);
-            }
+            this._setOffset(this._barOffset + diff);
           }
         }
       }
